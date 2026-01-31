@@ -1,0 +1,24 @@
+# Python dependencies for Blockchain Radio V4
+# Optimized for session-based ZK authentication
+
+# Cryptography (Ed25519, HMAC, key derivation)
+cryptography>=41.0.0
+
+# Performance monitoring
+psutil>=5.9.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Logging
+loguru>=0.7.0
+
+# Optional: Visualization for thesis graphs
+matplotlib>=3.8.0
+numpy>=1.24.0
+pandas>=2.1.0
+
+# Optional: Web dashboard
+flask>=3.0.0
+flask-cors>=4.0.0

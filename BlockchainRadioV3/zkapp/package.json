@@ -1,0 +1,30 @@
+{
+  "name": "radio-mesh-zkapp",
+  "version": "1.0.0",
+  "description": "Zero-Knowledge Proofs for Radio Mesh Network Integrity",
+  "type": "module",
+  "main": "build/RadioMeshIntegrity.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf build",
+    "test": "node build/generate_proof.js '{\"uid\":1,\"sid\":0,\"data\":\"test\",\"timestamp\":1000000}'",
+    "generate-proof": "node build/generate_proof.js",
+    "verify-proof": "node build/verify_proof.js"
+  },
+  "keywords": [
+    "mina",
+    "zkapp",
+    "zero-knowledge",
+    "radio-mesh",
+    "blockchain"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "o1js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

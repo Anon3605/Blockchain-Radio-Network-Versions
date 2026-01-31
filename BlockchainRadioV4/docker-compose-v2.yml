@@ -1,0 +1,210 @@
+# Blockchain Radio V4 - Docker Compose V2
+# CORRECT ARCHITECTURE: Producer Proposes, Repeaters Decide
+
+# LAYER 1: BLOCKCHAIN CONSENSUS (Port 7000)
+# - Producer sends proposals to repeaters
+# - Repeaters verify and sign
+# - Producer collects signatures (majority = consensus)
+# - Producer broadcasts finalized block
+# - Repeaters store and cache sessions
+
+# LAYER 2: DATA FORWARDING (Ports 5xxx/6xxx)
+# - RadioA → Producer → Rep1 → Rep2 → Rep3 → Rep4 → Receiver → RadioB
+# - Each hop verifies HMAC using cached session
+# - Fast verification (~3µs per hop)
+#
+
+services:
+
+  # RADIO ENDPOINTS (No blockchain - UDP only)
+  radio-a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: radio-a
+    hostname: radio-a
+    environment:
+      - NODE_TYPE=radio
+      - PRODUCER_HOST=producer-node
+      - PRODUCER_PORT=12345
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.5
+    command: python3 /app/radio/radio_a.py 100 2
+    depends_on:
+      - producer
+    restart: unless-stopped
+
+  radio-b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: radio-b
+    hostname: radio-b
+    environment:
+      - NODE_TYPE=radio
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.6
+    command: python3 /app/radio/radio_b.py --reply
+    depends_on:
+      - receiver
+    restart: unless-stopped
+
+  # PRODUCER NODE (Powerful - creates blocks)
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: producer-node
+    hostname: producer-node
+    environment:
+      - NODE_ID=producer
+      - NODE_TYPE=producer
+      # Data forwarding
+      - DATA_LISTEN_PORT=12345
+      - DATA_NEXT_HOP=repeater1:5001
+      # Blockchain (send proposals to repeaters, collect signatures)
+      - GOSSIP_LISTEN_PORT=7000
+      - GOSSIP_PEERS=repeater1:7000,repeater2:7000,repeater3:7000,repeater4:7000,receiver-node:7000
+      # Use simulated proofs for testing (fast)
+      - USE_SIMULATED_PROOFS=false
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.10
+    volumes:
+      - producer-data:/app/data
+    command: python3 /app/network/producer_v2.py
+    restart: unless-stopped
+
+  # REPEATER CHAIN (Lightweight - verify, sign, forward)
+  repeater1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-1
+    hostname: repeater1
+    environment:
+      - NODE_ID=repeater1
+      - NODE_TYPE=repeater
+      - DATA_LISTEN_PORT=5001
+      - DATA_NEXT_HOP=repeater2:5002
+      - GOSSIP_LISTEN_PORT=7000
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.11
+    volumes:
+      - repeater1-data:/app/data
+    command: python3 /app/network/repeater_v2.py
+    depends_on:
+      - producer
+    restart: unless-stopped
+
+  repeater2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-2
+    hostname: repeater2
+    environment:
+      - NODE_ID=repeater2
+      - NODE_TYPE=repeater
+      - DATA_LISTEN_PORT=5002
+      - DATA_NEXT_HOP=repeater3:5003
+      - GOSSIP_LISTEN_PORT=7000
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.12
+    volumes:
+      - repeater2-data:/app/data
+    command: python3 /app/network/repeater_v2.py
+    depends_on:
+      - repeater1
+    restart: unless-stopped
+
+  repeater3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-3
+    hostname: repeater3
+    environment:
+      - NODE_ID=repeater3
+      - NODE_TYPE=repeater
+      - DATA_LISTEN_PORT=5003
+      - DATA_NEXT_HOP=repeater4:5004
+      - GOSSIP_LISTEN_PORT=7000
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.13
+    volumes:
+      - repeater3-data:/app/data
+    command: python3 /app/network/repeater_v2.py
+    depends_on:
+      - repeater2
+    restart: unless-stopped
+
+  repeater4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-4
+    hostname: repeater4
+    environment:
+      - NODE_ID=repeater4
+      - NODE_TYPE=repeater
+      - DATA_LISTEN_PORT=5004
+      - DATA_NEXT_HOP=receiver-node:6000
+      - GOSSIP_LISTEN_PORT=7000
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.14
+    volumes:
+      - repeater4-data:/app/data
+    command: python3 /app/network/repeater_v2.py
+    depends_on:
+      - repeater3
+    restart: unless-stopped
+
+  # RECEIVER NODE (Final hop → RadioB)
+  receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: receiver-node
+    hostname: receiver-node
+    environment:
+      - NODE_ID=receiver
+      - NODE_TYPE=receiver
+      - DATA_LISTEN_PORT=6000
+      - RADIO_B_HOST=radio-b
+      - RADIO_B_PORT=54321
+      - GOSSIP_LISTEN_PORT=7000
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.20
+    volumes:
+      - receiver-data:/app/data
+    command: python3 /app/network/receiver_v2.py
+    depends_on:
+      - repeater4
+    restart: unless-stopped
+
+# NETWORK
+networks:
+  radio_mesh:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/16
+
+
+# VOLUMES (Persistent blockchain storage)
+volumes:
+  producer-data:
+  repeater1-data:
+  repeater2-data:
+  repeater3-data:
+  repeater4-data:
+  receiver-data:

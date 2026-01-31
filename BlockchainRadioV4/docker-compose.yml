@@ -1,0 +1,194 @@
+# Blockchain Radio V4 - Docker Compose
+#
+# Network topology:
+#   RadioA -> Producer -> Repeater1 -> Repeater2 -> Repeater3 -> Receiver -> RadioB
+#
+# Session establishment: ~120s (one-time ZK-SNARK proof)
+# Real-time messaging: ~0.1ms (HMAC verification)
+
+version: '3.8'
+
+services:
+  # ============================================
+  # Radio A - Message Sender
+  # ============================================
+  radio-a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: radio-a
+    hostname: radio-a
+    environment:
+      - PRODUCER_HOST=producer-node
+      - PRODUCER_PORT=12345
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.5
+    ports:
+      - "54321:54321/udp"
+    # Send 50 messages at 3-second intervals
+    command: python3 /app/radio/radio_a.py 50 3
+    depends_on:
+      - producer
+    restart: unless-stopped
+
+  # ============================================
+  # Radio B - Message Receiver
+  # ============================================
+  radio-b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: radio-b
+    hostname: radio-b
+    environment:
+      - RADIO_A_HOST=radio-a
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.6
+    ports:
+      - "54322:54321/udp"
+    command: python3 /app/radio/radio_b.py --reply
+    depends_on:
+      - receiver
+    restart: unless-stopped
+
+  # ============================================
+  # Producer Node - Entry point, ZK proof generation
+  # ============================================
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: producer-node
+    hostname: producer-node
+    environment:
+      - NODE_ID=producer
+      - NEXT_HOP=repeater1:5001
+      - RADIO_PORT=12345
+      - USE_SIMULATED_PROOFS=true
+      - AUTO_CACHE_SESSIONS=true
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.10
+    ports:
+      - "5000:5000"
+      - "12345:12345/udp"
+    volumes:
+      - producer-keys:/app/keys
+    command: python3 /app/network/producer.py
+    restart: unless-stopped
+
+  # ============================================
+  # Repeater Chain - Fast HMAC verification
+  # ============================================
+  repeater1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-1
+    hostname: repeater1
+    environment:
+      - NODE_ID=1
+      - NEXT_HOP=repeater2:5002
+      - AUTO_CACHE_SESSIONS=true
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.11
+    ports:
+      - "5001:5001"
+    volumes:
+      - repeater1-keys:/app/keys
+    command: python3 /app/network/repeater.py --id 1 --port 5001
+    depends_on:
+      - producer
+    restart: unless-stopped
+
+  repeater2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-2
+    hostname: repeater2
+    environment:
+      - NODE_ID=2
+      - NEXT_HOP=repeater3:5003
+      - AUTO_CACHE_SESSIONS=true
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.12
+    ports:
+      - "5002:5002"
+    volumes:
+      - repeater2-keys:/app/keys
+    command: python3 /app/network/repeater.py --id 2 --port 5002
+    depends_on:
+      - repeater1
+    restart: unless-stopped
+
+  repeater3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-3
+    hostname: repeater3
+    environment:
+      - NODE_ID=3
+      - NEXT_HOP=receiver-node:6000
+      - AUTO_CACHE_SESSIONS=true
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.13
+    ports:
+      - "5003:5003"
+    volumes:
+      - repeater3-keys:/app/keys
+    command: python3 /app/network/repeater.py --id 3 --port 5003
+    depends_on:
+      - repeater2
+    restart: unless-stopped
+
+  # ============================================
+  # Receiver Node - Final verification & delivery
+  # ============================================
+  receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: receiver-node
+    hostname: receiver-node
+    environment:
+      - NODE_ID=receiver
+      - AUTO_CACHE_SESSIONS=true
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.20
+    ports:
+      - "6000:6000"
+    volumes:
+      - receiver-keys:/app/keys
+    command: python3 /app/network/receiver.py
+    depends_on:
+      - repeater3
+    restart: unless-stopped
+
+# ============================================
+# Network Configuration
+# ============================================
+networks:
+  radio_mesh:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/16
+
+# ============================================
+# Persistent Volumes for Keys
+# ============================================
+volumes:
+  producer-keys:
+  repeater1-keys:
+  repeater2-keys:
+  repeater3-keys:
+  receiver-keys:

@@ -1,0 +1,29 @@
+{
+  "name": "blockchain-radio-v4-zkapp",
+  "version": "4.0.0",
+  "description": "ZK-SNARK Session Proofs for Blockchain Radio V4",
+  "type": "module",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "generate-proof": "node build/generate_session_proof.js",
+    "verify-proof": "node build/verify_session_proof.js"
+  },
+  "keywords": [
+    "mina",
+    "zkapp",
+    "zero-knowledge",
+    "blockchain-radio",
+    "session-authentication"
+  ],
+  "author": "Blockchain Radio Project",
+  "license": "MIT",
+  "dependencies": {
+    "o1js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  }
+}

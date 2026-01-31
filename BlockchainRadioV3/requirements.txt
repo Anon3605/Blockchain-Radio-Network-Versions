@@ -1,0 +1,24 @@
+# Python dependencies for Radio Mesh Network with ZK-Proofs
+
+# Cryptography (for signatures and hashing)
+cryptography>=41.0.0
+pycryptodome>=3.19.0
+
+# Performance monitoring
+psutil>=5.9.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Logging and debugging
+loguru>=0.7.0
+
+# Optional: For visualization (thesis graphs)
+matplotlib>=3.8.0
+numpy>=1.24.0
+pandas>=2.1.0
+
+# Optional: For web dashboard
+flask>=3.0.0
+flask-cors>=4.0.0

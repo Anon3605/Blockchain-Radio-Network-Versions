@@ -1,0 +1,39 @@
+FROM ubuntu:22.04
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DISPLAY=:99
+
+# Install GNU Radio and dependencies
+RUN apt-get update && apt-get install -y \
+    gnuradio \
+    python3-pip \
+    python3-numpy \
+    python3-pyqt5 \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    net-tools \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install additional Python packages
+RUN pip3 install --break-system-packages \
+    gnuradio \
+    pyqt5
+
+# Set working directory
+WORKDIR /radio
+
+# Copy radio scripts
+COPY radio/ /radio/
+
+# Create startup script for X virtual framebuffer
+RUN echo '#!/bin/bash\n\
+Xvfb :99 -screen 0 1024x768x16 &\n\
+export DISPLAY=:99\n\
+sleep 2\n\
+exec "$@"' > /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/bin/bash"]

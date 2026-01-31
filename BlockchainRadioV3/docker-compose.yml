@@ -1,0 +1,178 @@
+services:
+  # Radio A - Message Sender
+  radio-a:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: radio-a
+    hostname: radio-a
+    volumes:
+      - ./radio:/radio
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.5
+    ports:
+      - "54321:54321/udp"
+    command: python3 /radio/radio_a_simple.py 50 3
+    depends_on:
+      - producer
+
+  # Radio B - Message Receiver
+  radio-b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: radio-b
+    hostname: radio-b
+    volumes:
+      - ./radio:/radio
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.6
+    ports:
+      - "54322:54321/udp"
+    command: python3 /radio/radio_b_simple.py
+    depends_on:
+      - receiver
+
+  # Producer Node - Receives from RadioA, generates proofs
+  producer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: producer-node
+    hostname: producer-node
+    volumes:
+      - ./network:/app/network
+      - ./zkapp:/app/zkapp
+    environment:
+      - NODE_TYPE=producer
+      - NODE_ID=0
+      - NEXT_HOP=repeater1:5001
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.10
+    ports:
+      - "5000:5000"
+      - "12345:12345/udp"
+    working_dir: /app/network
+    command: python3 producer.py
+
+  # Repeater Chain
+  repeater1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-1
+    hostname: repeater1
+    volumes:
+      - ./network:/app/network
+    environment:
+      - NODE_TYPE=repeater
+      - NODE_ID=1
+      - NEXT_HOP=repeater2:5002
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.11
+    ports:
+      - "5001:5001"
+    working_dir: /app/network
+    command: python3 repeater.py --id 1 --port 5001
+    depends_on:
+      - producer
+
+  repeater2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-2
+    hostname: repeater2
+    volumes:
+      - ./network:/app/network
+    environment:
+      - NODE_TYPE=repeater
+      - NODE_ID=2
+      - NEXT_HOP=repeater3:5003
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.12
+    ports:
+      - "5002:5002"
+    working_dir: /app/network
+    command: python3 repeater.py --id 2 --port 5002
+    depends_on:
+      - repeater1
+
+  repeater3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-3
+    hostname: repeater3
+    volumes:
+      - ./network:/app/network
+    environment:
+      - NODE_TYPE=repeater
+      - NODE_ID=3
+      - NEXT_HOP=repeater4:5004
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.13
+    ports:
+      - "5003:5003"
+    working_dir: /app/network
+    command: python3 repeater.py --id 3 --port 5003
+    depends_on:
+      - repeater2
+
+  repeater4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: repeater-4
+    hostname: repeater4
+    volumes:
+      - ./network:/app/network
+    environment:
+      - NODE_TYPE=repeater
+      - NODE_ID=4
+      - NEXT_HOP=receiver-node:6000
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.14
+    ports:
+      - "5004:5004"
+    working_dir: /app/network
+    command: python3 repeater.py --id 4 --port 5004
+    depends_on:
+      - repeater3
+
+  # Receiver Node - Final verification, sends to RadioB
+  receiver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: receiver-node
+    hostname: receiver-node
+    volumes:
+      - ./network:/app/network
+    environment:
+      - NODE_TYPE=receiver
+      - NODE_ID=99
+    networks:
+      radio_mesh:
+        ipv4_address: 172.25.0.20
+    ports:
+      - "6000:6000"
+    working_dir: /app/network
+    command: python3 receiver.py
+    depends_on:
+      - repeater4
+
+networks:
+  radio_mesh:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/16
