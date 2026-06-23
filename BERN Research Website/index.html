@@ -32,7 +32,8 @@
             --border2: rgba(56, 139, 253, 0.28);
             --text: #dce8f4;
             --text-muted: #6a8aaa;
-            --text-dim: #2e4660;
+            --text-dim: #466a91;
+            --text-alert: #e24b4a;
             --mono: 'IBM Plex Mono', monospace;
             --sans: 'Space Grotesk', sans-serif;
             --body: 'IBM Plex Sans', sans-serif;
@@ -560,6 +561,14 @@
             color: var(--text-muted);
             max-width: 700px;
             line-height: 1.85
+        }
+        
+        .section-note {
+            font-size: 0.85rem;
+            color: var(--text-alert);
+            max-width: 700px;
+            line-height: 1.65;
+            margin-top: 0.8rem
         }
         /* ── glow divider ── */
         
@@ -2072,6 +2081,7 @@
                 <div class="section-eyebrow">02 — Development</div>
                 <h2 class="section-title">Four iterations to real-time security</h2>
                 <p class="section-intro">Each version targeted a specific bottleneck discovered in the previous — from basic hash chaining to full Byzantine Fault Tolerant consensus, without sacrificing sub-millisecond per-hop latency.</p>
+                <div class="section-note">Note: All the test results are extracted from docker simulations</div>
             </div>
 
             <div class="reveal">
