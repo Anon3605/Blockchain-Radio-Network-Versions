@@ -13,26 +13,26 @@ The insight is: **Every HMAC includes a hash of the original ZK proof**, creatin
 ```
 Session Establishment (one-time, ~120s):
 ┌─────────────────────────────────────────────────────────┐
-│  ZK Proof Generated → proof_hash = SHA256(full_proof)  │
-│  Full proof (~10KB) verified once, then discarded      │
-│  proof_hash (32 bytes) cached at all nodes             │
+│  ZK Proof Generated → proof_hash = SHA256(full_proof)   │
+│  Full proof (~10KB) verified once, then discarded       │
+│  proof_hash (32 bytes) cached at all nodes              │
 └─────────────────────────────────────────────────────────┘
 
 Real-time Messages (ongoing, ~0.1ms each):
 ┌─────────────────────────────────────────────────────────┐
-│  HMAC = HMAC(key, proof_hash || session || seq || data)│
+│  HMAC = HMAC(key, proof_hash || session || seq || data) │
 │                      ↑                                  │
-│         This binds EVERY message to the ZK proof       │
+│         This binds EVERY message to the ZK proof        │
 │                                                         │
-│  Packet carries: data + hmac_tag + proof_hash (32B)    │
-│  NOT the full ZK proof (10KB)                          │
+│  Packet carries: data + hmac_tag + proof_hash (32B)     │
+│  NOT the full ZK proof (10KB)                           │
 └─────────────────────────────────────────────────────────┘
 
 Verification at Repeaters:
 ┌─────────────────────────────────────────────────────────┐
-│  1. Check packet.proof_hash == cached.proof_hash       │
-│  2. Verify HMAC(key, proof_hash || ...) matches tag    │
-│  3. If both pass → message is from ZK-verified sender  │
+│  1. Check packet.proof_hash == cached.proof_hash        │
+│  2. Verify HMAC(key, proof_hash || ...) matches tag     │
+│  3. If both pass → message is from ZK-verified sender   │
 └─────────────────────────────────────────────────────────┘
 ```
 
