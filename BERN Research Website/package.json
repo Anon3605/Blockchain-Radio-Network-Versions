@@ -1,0 +1,20 @@
+{
+  "name": "bern-research-website",
+  "version": "1.0.0",
+  "description": "BERN — Blockchain-Enabled Radio Network Research Website",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "keywords": [
+    "blockchain",
+    "radio",
+    "network",
+    "bern"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/speed-insights": "^2.0.0"
+  }
+}
