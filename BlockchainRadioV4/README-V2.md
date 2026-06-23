@@ -23,30 +23,30 @@ This is **not** just "adding blockchain to radios." This architecture solves a f
 │                         DUAL-LAYER ARCHITECTURE                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  LAYER 1: BLOCKCHAIN GOSSIP (Control Plane) - TCP 7xxx                     │
-│  ═══════════════════════════════════════════════                           │
+│  LAYER 1: BLOCKCHAIN GOSSIP (Control Plane) - TCP 7xxx                      │
+│  ═══════════════════════════════════════════════                            │
 │  Purpose: Session establishment, ZK proof propagation, consensus            │
-│  Topology: FULL MESH (everyone ↔ everyone)                                 │
-│  Traffic: LOW (only on session start/end)                                  │
-│  Protocol: Gossip over TCP                                                 │
+│  Topology: FULL MESH (everyone ↔ everyone)                                  │
+│  Traffic: LOW (only on session start/end)                                   │
+│  Protocol: Gossip over TCP                                                  │
 │                                                                             │
-│       Producer ◄────► Repeater1 ◄────► Repeater2                           │
-│           │              │               │                                 │
-│           ▼              ▼               ▼                                 │
-│       Repeater3 ◄────► Repeater4 ◄────► Receiver                           │
-│                    (full mesh)                                             │
+│       Producer ◄────► Repeater1 ◄────► Repeater2                            │
+│           │              │               │                                  │
+│           ▼              ▼               ▼                                  │
+│       Repeater3 ◄────► Repeater4 ◄────► Receiver                            │
+│                    (full mesh)                                              │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  LAYER 2: DATA FORWARDING (Data Plane) - TCP 5xxx, UDP                     │
-│  ═══════════════════════════════════════════════════                       │
-│  Purpose: Real-time voice/data with HMAC verification                      │
-│  Topology: LINEAR CHAIN (hop-by-hop)                                       │
-│  Traffic: HIGH (all voice/data messages)                                   │
-│  Protocol: TCP between nodes, UDP for radio endpoints                      │
+│  LAYER 2: DATA FORWARDING (Data Plane) - TCP 5xxx, UDP                      │
+│  ═══════════════════════════════════════════════════                        │
+│  Purpose: Real-time voice/data with HMAC verification                       │
+│  Topology: LINEAR CHAIN (hop-by-hop)                                        │
+│  Traffic: HIGH (all voice/data messages)                                    │
+│  Protocol: TCP between nodes, UDP for radio endpoints                       │
 │                                                                             │
-│  RadioA → Producer → Rep1 → Rep2 → Rep3 → Rep4 → Receiver → RadioB        │
-│     UDP      TCP      TCP    TCP    TCP    TCP      TCP       UDP          │
+│  RadioA → Producer → Rep1 → Rep2 → Rep3 → Rep4 → Receiver → RadioB          │
+│     UDP      TCP      TCP    TCP    TCP    TCP      TCP       UDP           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -69,7 +69,7 @@ This Architecture:
   ┌─────────────────────────────────────┐
   │          RADIO MESH                 │
   │  Producer + Repeaters + Receiver    │
-  │         ═══════════════            │
+  │         ═══════════════             │
   │    ARE the blockchain nodes         │
   │                                     │
   │  No external dependency             │
@@ -113,7 +113,7 @@ Real-time Messages (Layer 2):
 │    - hmac_tag = HMAC(key, proof_hash || seq || data)        │
 │                                                             │
 │  Verification at each hop:                                  │
-│    1. packet.proof_hash == cached.proof_hash? (~0.01ms)    │
+│    1. packet.proof_hash == cached.proof_hash? (~0.01ms)     │
 │    2. HMAC valid? (~0.05ms)                                 │
 │    3. Both pass → message from ZK-verified session          │
 └─────────────────────────────────────────────────────────────┘
@@ -123,16 +123,16 @@ Real-time Messages (Layer 2):
 
 Like radio MIMO (Multiple Input Multiple Output), we separate control and data:
 
-| Node | Data Ports (5xxx/6xxx) | Blockchain Ports (7xxx) | Radio Ports (UDP) |
-|------|------------------------|-------------------------|-------------------|
-| RadioA | - | - | 54321 |
-| RadioB | - | - | 54321 |
-| Producer | UDP:12345, TCP:5000 | TCP:7000 (listen), 7001-7005 (out) | - |
-| Repeater1 | TCP:5001 | TCP:7000 (listen), 7101-7105 (out) | - |
-| Repeater2 | TCP:5002 | TCP:7000 (listen), 7201-7205 (out) | - |
-| Repeater3 | TCP:5003 | TCP:7000 (listen), 7301-7305 (out) | - |
-| Repeater4 | TCP:5004 | TCP:7000 (listen), 7401-7405 (out) | - |
-| Receiver | TCP:6000 | TCP:7000 (listen), 7501-7505 (out) | - |
+| Node      | Data Ports (5xxx/6xxx) |      Blockchain Ports (7xxx)       | Radio Ports (UDP) |
+|-----------|------------------------|------------------------------------|-------------------|
+| RadioA    |            -           |                  -                 |       54321       |
+| RadioB    |            -           |                  -                 |       54321       |
+| Producer  |  UDP:12345,  TCP:5000  | TCP:7000 (listen), 7001-7005 (out) |         -         |
+| Repeater1 |        TCP:5001        | TCP:7000 (listen), 7101-7105 (out) |         -         |
+| Repeater2 |        TCP:5002        | TCP:7000 (listen), 7201-7205 (out) |         -         |
+| Repeater3 |        TCP:5003        | TCP:7000 (listen), 7301-7305 (out) |         -         |
+| Repeater4 |        TCP:5004        | TCP:7000 (listen), 7401-7405 (out) |         -         |
+| Receiver  |        TCP:6000        | TCP:7000 (listen), 7501-7505 (out) |         -         |
 
 **Key insight**: Blockchain sync (7xxx) NEVER blocks data forwarding (5xxx). They run in parallel.
 
@@ -187,24 +187,24 @@ No blockchain interaction!
 
 ## Security Properties
 
-| Property | How It's Achieved |
-|----------|-------------------|
-| **Authentication** | ZK-SNARK proves identity without revealing private key |
-| **Decentralization** | Gossip protocol - no central authority |
-| **Integrity** | HMAC on every message |
-| **Binding** | proof_hash in every HMAC links to ZK proof |
-| **Replay Protection** | Sequence numbers + timestamps |
-| **Real-time** | Session cached, only HMAC verification on data path |
+|         Property         |                    How It's Achieved                   |
+|--------------------------|--------------------------------------------------------|
+| **Authentication**       | ZK-SNARK proves identity without revealing private key |
+| **Decentralization**     | Gossip protocol - no central authority                 |
+| **Integrity**            | HMAC on every message                                  |
+| **Binding**              | proof_hash in every HMAC links to ZK proof             |
+| **Replay Protection**    | Sequence numbers + timestamps                          |
+| **Real-time**            | Session cached, only HMAC verification on data path    |
 
 ## Performance
 
-| Operation | Time | When |
-|-----------|------|------|
-| Session establishment | ~120s | Once per session |
-| Gossip propagation | ~1-2s | Once per session |
-| HMAC creation | ~0.003ms | Every message |
-| HMAC verification | ~0.003ms | Every hop |
-| **Total per-message latency** | **<1ms** | After session |
+|           Operation           |   Time   |       When       |
+|-------------------------------|----------|------------------|
+| Session establishment         |   ~120s  | Once per session |
+| Gossip propagation            |  ~1-2s   | Once per session |
+| HMAC creation                 | ~0.003ms | Every message    |
+| HMAC verification             | ~0.003ms | Every hop        |
+| **Total per-message latency** | **<1ms** | After session    |
 
 ## Running the System
 
