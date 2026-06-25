@@ -475,11 +475,6 @@
             transition: color .4s
         }
         
-        .step-circle.active+.step-label,
-        .step-circle.done+.step-label {
-            /* handled differently */
-        }
-        
         .step-wrap {
             position: relative;
             display: flex;
@@ -1804,51 +1799,51 @@
             const now = new Date().toUTCString();
 
             const embed = {
-                title: '🔐 New BERN Code Access Request',
+                title: 'New BERN Code Access Request',
                 color: 0x388bfd,
                 description: `A new access request has been submitted via the BERN research website.\n\n**Request ID:** \`${reqId}\`\n**Submitted:** ${now}`,
                 fields: [{
-                    name: '👤 Name',
+                    name: 'Name',
                     value: v('f-name'),
                     inline: true
                 }, {
-                    name: '📧 Email',
+                    name: 'Email',
                     value: v('f-email'),
                     inline: true
                 }, {
-                    name: '🏛️ Affiliation',
+                    name: 'Affiliation',
                     value: v('f-affil'),
                     inline: true
                 }, {
-                    name: '💼 Role',
+                    name: 'Role',
                     value: v('f-role') || '—',
                     inline: true
                 }, {
-                    name: '🔗 LinkedIn / Website',
+                    name: 'LinkedIn / Website',
                     value: v('f-link') || '—',
                     inline: true
                 }, {
-                    name: '🎯 Interest Area',
+                    name: 'Interest Area',
                     value: document.getElementById('f-interest').value,
                     inline: true
                 }, {
-                    name: '📦 Versions of Interest',
+                    name: 'Versions of Interest',
                     value: versions,
                     inline: false
                 }, {
-                    name: '❓ Why they want access',
+                    name: 'Why they want access',
                     value: v('f-why'),
                     inline: false
                 }, {
-                    name: '🤝 Wants to Collaborate?',
+                    name: 'Wants to Collaborate?',
                     value: collabLabel,
                     inline: true
                 }, {
-                    name: '🛠️ Skills',
+                    name: 'Skills',
                     value: skills || '—',
                     inline: true
                 }, {
-                    name: '💡 How they can help',
+                    name: 'How they can help',
                     value: helpText,
                     inline: false
                 }, ],
