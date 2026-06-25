@@ -1788,9 +1788,9 @@
             document.getElementById('loading-overlay').classList.add('show');
             const reqId = 'REQ-' + Date.now().toString(36).toUpperCase();
             const collabLabel = {
-                yes: '✅ Yes — wants to collaborate',
-                maybe: '🤔 Open to it',
-                no: '❌ No — just exploring'
+                yes: 'Yes — wants to collaborate',
+                maybe: 'Open to it',
+                no: 'No — just exploring'
             }[collabVal];
             const versions = [...versionPicks].join(', ') || 'Not specified';
             const skills = [...skillSet].join(', ') || 'None selected';
